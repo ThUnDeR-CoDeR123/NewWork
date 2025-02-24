@@ -1,0 +1,56 @@
+# version: '3.8'
+
+services:
+  gateway:
+    build: ./services/gateway  # Path to the gateway service Dockerfile
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./services/gateway/.env  # Load environment variables
+    depends_on:
+      - auth
+      - user
+      - transaction
+      - referral
+    networks:
+      - microservices-network
+
+  auth:
+    build: ./services/auth  # Path to the auth service Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./services/auth/.env
+    networks:
+      - microservices-network
+
+  user:
+    build: ./services/user  # Path to the user service Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./services/user/.env
+    networks:
+      - microservices-network
+
+  transaction:
+    build: ./services/transaction  # Path to the transaction service Dockerfile
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./services/transaction/.env
+    networks:
+      - microservices-network
+
+  referral:
+    build: ./services/referral  # Path to the referral service Dockerfile
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./services/referral/.env
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge

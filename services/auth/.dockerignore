@@ -1,0 +1,12 @@
+# Ignore Python cache directories and files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.pyo
+
+# Ignore environment files and directories
+.env
+**/.env
+.env/
+**/.env/
