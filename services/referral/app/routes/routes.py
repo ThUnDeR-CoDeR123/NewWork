@@ -135,7 +135,7 @@ async def get_hierarchy_count(db: Annotated[Session , Depends(get_db)],user_id: 
             status_code=500
         )
     
-@router.get("/referral/level-count/")
+@router.get("/referral/level-count")
 async def get_referral_level_count(
     token: TokenData,
     db: Session = Depends(get_db)
