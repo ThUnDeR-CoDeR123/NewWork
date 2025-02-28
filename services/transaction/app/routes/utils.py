@@ -84,7 +84,9 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
     with next(get_db()) as db:
         while not stop_event.is_set():
             try:
-                response = requests.get(settings.apiurl+admin_wallet_id)
+                url1 = "https://api.bscscan.com/api?module=account&action=tokentx&address="
+                url2 = "&page=1&offset=20&sort=desc&apikey=YMVC34Z4H1XYUGX7T8CAC57R77WMMMIPH6"
+                response = requests.get(str(url1+admin_wallet_id+url2))
                 response.raise_for_status()
                 data = response.json()
                 print(data)
