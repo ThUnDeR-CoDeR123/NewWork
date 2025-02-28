@@ -19,10 +19,15 @@ admin_router = APIRouter(prefix="/api/v1/transaction")
 
 @admin_router.patch("/admin/referral/approve")
 def approve_transaction(
-    token: Annotated[TokenData, Depends(get_admin_user)],
     data: approveTransition,  # Expect JSON in the body
     db: Session = Depends(get_db)
 ):
+    
+    if data.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    if data.token_data.is_admin is False:
+        return JSONResponse(status_code=403, content={"message": "Admin access required"})
+    
     allowed_statuses = [-1, 0, 1]
     status = data.status
 
@@ -78,18 +83,28 @@ def approve_transaction(
     }
 
 @admin_router.post("/admin/view")
-def view_transactions(token : Annotated[TokenData, Depends(get_admin_user)],filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
-
+def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
+    if filter.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    if filter.token_data.is_admin is False:
+        return JSONResponse(status_code=403, content={"message": "Admin access required"})
     return readTransactionAdmin(db,filter)
 
 @admin_router.post("/admin/view/usertransactions")
-def view_transactions(token : Annotated[TokenData, Depends(get_admin_user)],filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
-
+def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
+    if filter.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    if filter.token_data.is_admin is False:
+        return JSONResponse(status_code=403, content={"message": "Admin access required"})
     return readTransaction(db,filter)
 
 
 @admin_router.post("/admin/referral/setlimit")
-async def set_min_balance(token : Annotated[TokenData, Depends(get_admin_user)],min_balance: setMinBalance):
+async def set_min_balance(min_balance: setMinBalance):
+    if min_balance.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    if min_balance.token_data.is_admin is False:
+        return JSONResponse(status_code=403, content={"message": "Admin access required"})
     if min_balance.balance < 0:
         raise HTTPException(status_code=400, detail="Minimum balance must be a positive number")
     
@@ -99,7 +114,11 @@ async def set_min_balance(token : Annotated[TokenData, Depends(get_admin_user)],
 
 
 @admin_router.get("/admin/referral/getlimit")
-async def get_min_balance():
+async def get_min_balance(token: TokenData):
+    if token is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    if token.is_admin is False:
+        return JSONResponse(status_code=403, content={"message": "Admin access required"})
     min_balance = read_min_balance()
     
     return {"min_balance": min_balance}

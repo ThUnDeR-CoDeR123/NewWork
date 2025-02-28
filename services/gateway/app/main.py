@@ -73,11 +73,14 @@ async def gateway(service: str, path: str, request: Request, token : Annotated[T
     query_params = request.query_params
     query_string = f"?{urlencode(query_params)}" if query_params else ""
 
-
-    body = await request.json() if request.method in ["POST", "PUT", "PATCH"] else None
+    try:
+        body = await request.json() if request.method in ["POST", "PUT", "PATCH"] else None
+    except json.JSONDecodeError:
+        body = None
     
     if token :
         token_data= {'id':token.id, 'username':token.username, 'flag':token.flag, 'is_admin':token.is_admin}
+        print("adding token to request")
         if body is not None :
             body ['token_data']=token_data
         else:

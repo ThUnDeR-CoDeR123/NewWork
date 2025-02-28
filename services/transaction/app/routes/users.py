@@ -16,8 +16,10 @@ user_router = APIRouter(prefix="/api/v1/transaction")
 
 
 @user_router.post("/referral/withdrawal/add")
-def request_withdrawal(token : Annotated[TokenData, Depends(get_normal_user)],withdrawal: transactionRequest, db : Annotated[Session , Depends(get_db) ]):
-    
+def request_withdrawal(withdrawal: transactionRequest, db : Annotated[Session , Depends(get_db) ]):
+    if transactionRequest.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    token = withdrawal.token_data
     try:
 
         minBalance = read_min_balance()
@@ -32,16 +34,20 @@ def request_withdrawal(token : Annotated[TokenData, Depends(get_normal_user)],wi
 
 
 @user_router.post("/transactions/view")
-def view_transactions(token : Annotated[TokenData, Depends(get_normal_user)],filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
-    
+def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
+    if filter.token_data is None:
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
+    token = filter.token_data
     filter.user_id= token.id
     print("calling InterimtoCryptoWallet..")
     InterimToCryptoWallet()
     return readTransaction(db,filter)
 
 
-@user_router.post("/transactions/crypto-deposit")
-def crypto_deposit(token : Annotated[TokenData, Depends(get_normal_user)],req: transactionRequest , db : Annotated[Session , Depends(get_db) ]):
+@user_router.get("/transactions/crypto-deposit")
+def crypto_deposit(token: TokenData , db : Annotated[Session , Depends(get_db) ]):
+    if token == None:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized access"}) 
     user_id = token.id
     print("Setting an admin wallet...")
     try:
@@ -69,13 +75,13 @@ def crypto_deposit(token : Annotated[TokenData, Depends(get_normal_user)],req: t
 
 
 
-@user_router.post("/referral/add")
-def credit_user_wallet(token : Annotated[TokenData, Depends(get_normal_user)],credit: transactionRequest, db: Session = Depends(get_db)):
-    try:
-        t = addDeposit(db,token.id,credit.amount)
-        return {"message": "Transaction created successfully", "transaction_id": t.id}
-    except Exception as e:
-        return JSONResponse(status_code=400,content = {"error": str(e)})
+# @user_router.post("/referral/add")
+# def credit_user_wallet(token : Annotated[TokenData, Depends(get_normal_user)],credit: transactionRequest, db: Session = Depends(get_db)):
+#     try:
+#         t = addDeposit(db,token.id,credit.amount)
+#         return {"message": "Transaction created successfully", "transaction_id": t.id}
+#     except Exception as e:
+#         return JSONResponse(status_code=400,content = {"error": str(e)})
 
 
 

@@ -46,6 +46,11 @@ async def get_admin_user(token_data: TokenData ):
 
 
 async def get_normal_user(token_data: TokenData ):
+    if token_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized access"
+        )
     if token_data.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
