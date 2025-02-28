@@ -79,7 +79,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
     Checks for a valid crypto deposit transaction for up to 15 minutes.
     """
     print("Thread started...")
-    polling_interval = 20  # Check every 20 seconds
+    polling_interval = 30  # Check every 30 seconds
     timeout = timedelta(minutes=5)
     with next(get_db()) as db:
         while not stop_event.is_set():
