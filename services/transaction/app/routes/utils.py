@@ -84,7 +84,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
     with next(get_db()) as db:
         while not stop_event.is_set():
             try:
-                response = requests.get(settings.apiurl)
+                response = requests.get(settings.apiurl+admin_wallet_id)
                 response.raise_for_status()
                 data = response.json()
                 print(data)
