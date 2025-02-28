@@ -87,8 +87,9 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
                 response = requests.get(settings.apiurl)
                 response.raise_for_status()
                 data = response.json()
-
+                print(data)
                 if data["status"] == "1" and "result" in data:
+                    print("status ok fond")
                     transactions = data["result"]
                     for txn in transactions:
                         txn_time = datetime.fromtimestamp(int(txn["timeStamp"]), tz=timezone.utc)  # Use timezone-aware UTC
@@ -100,6 +101,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
                         if txn_time >= start_time and txn_to == admin_wallet_id.lower():
                             try:
                                 #independent atomic functionality
+                                print("processing transaction")
                                 processTransaction(txn_hash,user_id,amount,admin_wallet_id)  # Process transaction
                             except Exception as e:
                                 print(f"Error processing transaction: {str(e)}")
