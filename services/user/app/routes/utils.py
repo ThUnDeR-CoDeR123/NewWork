@@ -74,7 +74,8 @@ def modelToSchema(user : app.models.User,hierarchy_count:int = None,db:Session =
         Crypto_balance=user.crypto_wallet.balance,
         Referral_balance=user.referral_wallet.balance,
         wallet_id=user.wallet_id,
-        transaction_id=user.transaction_id
+        transaction_id=user.transaction_id,
+        interim_balance=user.interim_wallet.balance
     )
     if db:
         levelCount = get_level_counts(db,user.id)
@@ -83,7 +84,6 @@ def modelToSchema(user : app.models.User,hierarchy_count:int = None,db:Session =
             
             
     if hierarchy_count:
-        
         UserSchema.hierarchy_count = hierarchy_count
     return UserSchema
 

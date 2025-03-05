@@ -20,6 +20,15 @@ services = {
 
 
 app = FastAPI()
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "message": exc.detail,
+            "status_code": exc.status_code,
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -74,7 +83,7 @@ async def gateway(service: str, path: str, request: Request, token : Annotated[T
     query_string = f"?{urlencode(query_params)}" if query_params else ""
 
     try:
-        body = await request.json() if request.method in ["POST", "PUT", "PATCH"] else None
+        body = await request.json()
     except json.JSONDecodeError:
         body = None
     
@@ -96,6 +105,12 @@ async def gateway(service: str, path: str, request: Request, token : Annotated[T
         return response
     
     try:
+        if response.status_code != 200 and "message" not in response.json():
+            data = response.json()  
+            data['message'] = "Something went wrong, please try again!"
+            if "detail" in data:
+                data["message"] = data["detail"]
+            return JSONResponse(status_code=response.status_code, content=data)
         return JSONResponse(status_code=response.status_code, content=response.json())
     except Exception as e:
         return response

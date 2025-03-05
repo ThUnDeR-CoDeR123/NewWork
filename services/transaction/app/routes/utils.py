@@ -74,7 +74,7 @@ def read_min_balance() -> float:
         return 0.0
     
 
-def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
+def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event,transaction_id):
     """
     Checks for a valid crypto deposit transaction for up to 15 minutes.
     """
@@ -87,6 +87,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
                 url1 = "https://api.bscscan.com/api?module=account&action=tokentx&address="
                 url2 = "&page=1&offset=20&sort=desc&apikey=YMVC34Z4H1XYUGX7T8CAC57R77WMMMIPH6"
                 response = requests.get(str(url1+admin_wallet_id+url2))
+                # response = requests.get("http://192.168.0.101:8010/transactions")
                 response.raise_for_status()
                 data = response.json()
                 print(data)
@@ -104,7 +105,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
                             try:
                                 #independent atomic functionality
                                 print("processing transaction")
-                                processTransaction(txn_hash,user_id,amount,admin_wallet_id)  # Process transaction
+                                processTransaction(txn_hash,user_id,amount,admin_wallet_id,transaction_id)  # Process transaction
                             except Exception as e:
                                 print(f"Error processing transaction: {str(e)}")
                                 
@@ -136,12 +137,12 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event):
 
             time.sleep(polling_interval)  # Wait before next attempt
 
-def assign_scheduler(user_id, admin_wallet_id):
+def assign_scheduler(user_id, admin_wallet_id,transaction_id):
     start_time = datetime.now(timezone.utc)  # Set start time with UTC awareness
     print("Thread starting... for Crypto-Deposit at start time : ",start_time)
     try:
         stop_event = threading.Event()  # Event to stop the scheduler
-        thread = threading.Thread(target=check_for_transaction, args=(user_id, start_time, admin_wallet_id, stop_event))
+        thread = threading.Thread(target=check_for_transaction, args=(user_id, start_time, admin_wallet_id, stop_event,transaction_id))
         thread.start()
         print("thread started.. for Crypto-Deposit")
     except Exception as e:

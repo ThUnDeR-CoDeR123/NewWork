@@ -22,20 +22,21 @@ async def forget_password(req: forgetEmail, background_tasks: BackgroundTasks, d
     try:
         response = await generateToken(id=user.id, username=req.email, flag="FORGET")
         if response.status_code != 200:
-            status_info = HTTPStatus(response.status_code)
             return JSONResponse(
-                status_code=status_info.value,
-                content={"error": f"{status_info.phrase}: {status_info.description}"}
+                status_code=response.status_code,
+                content={"message": "An unexpected error occurred. Please try again!"}
             )
     except httpx.RequestError as exc:
         return JSONResponse(
             status_code=500,
-            content={"error": f"An error occurred while requesting {exc.request.url}: {str(exc)}"}
+            content={"error": f"An error occurred while requesting {exc.request.url}: {str(exc)}",
+                     "message": "Could not send email"}
         )
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": f"An unexpected error occurred: {str(e)}"}
+            content={"error": f"An unexpected error occurred: {str(e)}",
+                     "message": "An unexpected error occurred. Please try again!"}
         )
     
 
@@ -63,28 +64,33 @@ async def forget_password(req: forgetEmail, background_tasks: BackgroundTasks, d
             "link": f"https://inddigi-dev.web.app/#/confirmpass?token=%22{response.json().get('access_token')}%22",
             "token": f"{response.json().get('access_token')}"
             })
-        
+                
 
 
 @forgetRouter.post("/reset-password")
 async def reset_password(data: passwordReset, db: Annotated[Session, Depends(get_db)]):
     try:
-        # token_data = await getTokenDataFromAuthService(data.token)
-        token_data = data.token_data
+
+
+
+        token_data = await getTokenDataFromAuthService(data.token)
 
         l=checkForgetToken(token_data.id,db, data.token)
         print(l)
         if l[0]!=l[1] :
             return JSONResponse(
                 status_code=403,
-                content={"error": "Supplied token is invalid."}
+                content={"message": "Supplied token is invalid."}
             )
+
+        
 
         # Check if the flag indicates that this token is meant for password reset
         if token_data.flag != "FORGET":
             return JSONResponse(
                 status_code=403,
-                content={"error": "Supplied token is not for password reset."}
+                content={"error": "Supplied token is not for password reset.",
+                         "message": "Supplied token is invalid."}
             )
         new_hash = get_password_hash(data.new_password)
 
@@ -99,20 +105,23 @@ async def reset_password(data: passwordReset, db: Annotated[Session, Depends(get
         # Catching any network-related errors
         return JSONResponse(
             status_code=500,
-            content={"error": f"Request to auth service failed: {str(e)}"}
+            content={"error": f"Request to auth service failed: {str(e)}",
+                     "message": "Something went wrong. Please try again!"}
         )
 
     except httpx.HTTPStatusError as e:
         # Handling non-200 responses from the auth service
         return JSONResponse(
             status_code=e.response.status_code,
-            content={"error": "Failed to verify token with the auth service."}
+            content={"error": "Failed to verify token with the auth service.",
+                     "message": "Verification Failed. Please try again!"}
         )
 
     except Exception as e:
         # Generic fallback for all unforeseen exceptions
         return JSONResponse(
             status_code=500,
-            content={"error": f"An unexpected error occurred: {str(e)}"}
+            content={"error": f"An unexpected error occurred: {str(e)}",
+                     "message": "Something went wrong. Please try again!"}
         )
 

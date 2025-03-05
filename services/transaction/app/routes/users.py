@@ -6,7 +6,7 @@ from app.schemas import transactionRequest,TokenData,TransactionFilter
 from app.routes.utils import get_admin_user,get_normal_user,read_min_balance,assign_scheduler
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer
-from app.crud import addWithdrawal,readTransaction,addDeposit,getAdminWallet,resetAdminWallet,InterimToCryptoWallet
+from app.crud import addWithdrawal,readTransaction,createTransaction,getAdminWallet,resetAdminWallet,InterimToCryptoWallet,updateTransactionStatus
 from starlette.responses import JSONResponse
 import threading, datetime
 
@@ -17,7 +17,7 @@ user_router = APIRouter(prefix="/api/v1/transaction")
 
 @user_router.post("/referral/withdrawal/add")
 def request_withdrawal(withdrawal: transactionRequest, db : Annotated[Session , Depends(get_db) ]):
-    if transactionRequest.token_data is None:
+    if withdrawal.token_data is None:
         return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
     token = withdrawal.token_data
     try:
@@ -29,7 +29,7 @@ def request_withdrawal(withdrawal: transactionRequest, db : Annotated[Session , 
 
         return {"message": "Withdrawal request processed", "transaction_id": t.id}
     except Exception as e:
-        return JSONResponse(status_code=400,content = {"error": str(e)})
+        return JSONResponse(status_code=400,content = {"message": str(e)})
 
 
 
@@ -39,15 +39,15 @@ def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depen
         return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
     token = filter.token_data
     filter.user_id= token.id
-    print("calling InterimtoCryptoWallet..")
-    InterimToCryptoWallet()
+   
     return readTransaction(db,filter)
 
 
 @user_router.get("/transactions/crypto-deposit")
-def crypto_deposit(token: TokenData , db : Annotated[Session , Depends(get_db) ]):
+def crypto_deposit(data: transactionRequest , db : Annotated[Session , Depends(get_db) ]):
+    token = data.token_data
     if token == None:
-        return JSONResponse(status_code=401, content={"error": "Unauthorized access"}) 
+        return JSONResponse(status_code=401, content={"message": "Unauthorized access"}) 
     user_id = token.id
     print("Setting an admin wallet...")
     try:
@@ -60,8 +60,13 @@ def crypto_deposit(token: TokenData , db : Annotated[Session , Depends(get_db) ]
 
     # Assigning the scheduler to update the wallet balance in the background
     try:
-        assign_scheduler(user_id,admin_wallet.wallet_id)
+        t=createTransaction(admin_wallet.wallet_id,user_id,data.amount,db,status=0)
+        if not t:
+            raise Exception("Transaction not created, Please try again later")
+        assign_scheduler(user_id,admin_wallet.wallet_id,t.id)
     except Exception as e:
+        if t:
+            updateTransactionStatus(db,t.id,data.amount,status=-1)
         print("pooling failed")
         print("Releasing assigned Admin wallet...")
         resetAdminWallet(db,admin_wallet.wallet_id)
@@ -70,10 +75,16 @@ def crypto_deposit(token: TokenData , db : Annotated[Session , Depends(get_db) ]
                                                       "details": f"{str(e)}"})
     
     return JSONResponse(status_code=200, content={"message": "Transaction is being processed",
-                                                  "admin_wallet": admin_wallet.wallet_id})
+                                                  "admin_wallet": admin_wallet.wallet_id,
+                                                  "id": t.id})
 
 
-
+@user_router.get("/check-status")
+def check_status(transaction_id: int, db: Session = Depends(get_db)):
+    t = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if t is None:
+        return JSONResponse(status_code=404, content={"message": "Transaction not found"})
+    return JSONResponse(status_code=200, content={"status": t.status})
 
 # @user_router.post("/referral/add")
 # def credit_user_wallet(token : Annotated[TokenData, Depends(get_normal_user)],credit: transactionRequest, db: Session = Depends(get_db)):

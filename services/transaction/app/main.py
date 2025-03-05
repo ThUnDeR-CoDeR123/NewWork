@@ -48,6 +48,15 @@ app = FastAPI(lifespan=lifespan)
 
 route = APIRouter(prefix="/api/v1/transaction")
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "message": exc.detail,
+            "status_code": exc.status_code,
+        },
+    )
 
 
 app.add_middleware(

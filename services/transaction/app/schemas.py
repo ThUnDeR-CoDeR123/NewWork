@@ -27,6 +27,7 @@ class TransactionFilter(BaseModel):
     page: int = 1
     limit: int = 10
     transaction_type: Optional[int] = None # 0 from credit, 1 for debit
+    from_type: Optional[int] = None
 
 class approveTransition(BaseModel):
     token_data : Optional[TokenData] = None

@@ -31,7 +31,7 @@ async def create_referral_code(request: CreateReferralRequest, db: Annotated[Ses
         code = generate_referral_code(request.user_id)
         user = addReferral(request.user_id,code,db)
     except OperationalError as e:
-        JSONResponse(content={"error":str(e)},status_code=500)
+        JSONResponse(content={"message":"Database error occured, Please try after some time."},status_code=500)
 
     return JSONResponse(content={"referral_code":user.referral_code},status_code=200)
 
@@ -52,17 +52,18 @@ async def get_referral_details(data: UserFilter,   db : Annotated[Session, Depen
     print("called")
     try:
         if not data.token_data.is_admin:
-            return JSONResponse(status_code=401, content={"error":"Unauthorized access"})
+            return JSONResponse(status_code=401, content={"message":"Unauthorized access"})
             
         user = getUserByEmail(email=data.email,db=db)
         if not user:
                 print("User not found")
-                return JSONResponse(status_code=404, content={"error":"user not found"})
+                return JSONResponse(status_code=404, content={"message":"user not found"})
         data =generate_tree_with_user_details(db,user.id)
 
         return data
     except Exception as e:
-        raise HTTPException(status_code=500, content={"error": str(e)})
+        raise HTTPException(status_code=500, content={"message": "something went wrong,Please try again!",
+                                                      "error":str(e)})
 
 @router.post("/deposit/{user_id}")
 async def process_deposit(user_id: int):
@@ -92,14 +93,15 @@ async def update_referral_settings():
 async def get_referrers(user_id: int , db : Annotated[Session, Depends(get_db)], token : TokenData):
     try:
         if not token.is_admin:
-            return JSONResponse(status_code=401, content={"error":"Unauthorized access"})
+            return JSONResponse(status_code=401, content={"message":"Unauthorized access"})
         referrers = await getReferrers(user_id, db)
         if not referrers:
             print("not found")
-            return JSONResponse(status_code=404, content={"error":"No referrers found for the given user ID"})
+            return JSONResponse(status_code=404, content={"message":"No referrers found for the given user ID"})
         return {"user_id": user_id, "referrers": referrers}
     except Exception as e:
-        return JSONResponse(status_code=500, content=str(e)) 
+        return JSONResponse(status_code=500, content={"message":"Something went worng, Please try again!",
+                                                      "error":str(e)}) 
   
 
 @router.get("/hierarchy-count/{user_id}")

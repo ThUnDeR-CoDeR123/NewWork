@@ -18,12 +18,12 @@ tokenRouter = APIRouter(prefix="/api/v1/user")
 @tokenRouter.get("/me", response_model=User)
 async def read_user(token_data: TokenData | None,db: Annotated[Session, Depends(get_db)]):
     print(token_data)
-    # token_data = await getTokenDataFromAuthService(token)
+    # token_da  ta = await getTokenDataFromAuthService(token)
     if token_data is None :
-        return JSONResponse(status_code=401,content={"error": "missing Authorization header"})
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
     if token_data.flag != "LOGIN":
         print(token_data)
-        return JSONResponse(status_code=401,content={"error": "Invalid Credentials!"})
+        return JSONResponse(status_code=401,content={"message": "Invalid Credentials!"})
     user = getUserById(token_data.id,db)
 
    
@@ -50,12 +50,12 @@ async def read_user_all(filter: UserFilter | None,db: Annotated[Session, Depends
     token_data = filter.token_data
     
     if token_data is None :
-        return JSONResponse(status_code=401,content={"error": "missing Authorization header"})
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
     print("for auth : ",time.time()-start,"s")
     start = time.time()
     #need to add isadmin check
     if token_data.flag != "LOGIN":
-        return JSONResponse(status_code=401,content={"error":"Invalid Credentials!"})
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
     user = getUserById(token_data.id,db)
     if user.is_admin :
 
@@ -63,7 +63,7 @@ async def read_user_all(filter: UserFilter | None,db: Annotated[Session, Depends
         print("for fetching : ",time.time()-start,"s")
         
         return users
-    return JSONResponse(status_code=401,content={"error":"Permission Denied!"})
+    return JSONResponse(status_code=401,content={"message":"Permission Denied!"})
 
 
 
@@ -73,10 +73,10 @@ async def update_user(db: Annotated[Session, Depends(get_db)],user: UserUpdate):
     # token_data = await getTokenDataFromAuthService(token)
     token_data = user.token_data
     if token_data is None :
-        return JSONResponse(status_code=401,content={"error": "missing Authorization header"})
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
 
     if token_data.flag != "LOGIN":
-        return JSONResponse(status_code=401,content="Invalid Credentials!")
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
 
     updated_user = updateUser(
                             user_id=token_data.id,
@@ -95,16 +95,16 @@ async def update_user_wallet(db: Annotated[Session, Depends(get_db)],wallet: upd
     token_data = wallet.token_data
     
     if token_data is None :
-        return JSONResponse(status_code=401,content={"error": "missing Authorization header"})
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
     if token_data.flag != "LOGIN":
-        return JSONResponse(status_code=401,content="Invalid Credentials!")
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
     updated_user = updateUserWalletid(user_id=token_data.id,wallet_id=wallet.wallet_id,db=db)  # Use the ID from the current user
     if not updated_user:
-            return JSONResponse(status_code=401,content={'error': "Couldn't update wallet id"})
+            return JSONResponse(status_code=401,content={'message': "Couldn't update wallet id"})
     # except Exception as e:
     #     error_details = traceback.format_exc()  # Captures the full stack trace
     #     return JSONResponse(status_code=400, content={"error": str(e), "details": error_details})
-    return JSONResponse(status_code=200,content={"Message":"wallet_updated successfully!"})
+    return JSONResponse(status_code=200,content={"message":"wallet_updated successfully!"})
 
 
 
@@ -113,9 +113,9 @@ async def update_user_wallet(db: Annotated[Session, Depends(get_db)],wallet: upd
 async def delete_user(token_data: TokenData | None,db: Annotated[Session, Depends(get_db)]):
     # token_data = await getTokenDataFromAuthService(token)
     if token_data is None :
-        return JSONResponse(status_code=401,content={"error": "missing Authorization header"})
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
     if token_data.flag != "LOGIN":
-        return JSONResponse(status_code=401,content="Invalid Credentials!")
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
     deleted_user=deleteUser(token_data.id,db)
     return DeleteUser(msg = "User deleted successfully", username=deleted_user.email)
 

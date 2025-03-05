@@ -64,6 +64,8 @@ def readTransaction(db:Session,filter:TransactionFilter,):
         query = query.filter(Transaction.created_at <= filter.to_date)
     if filter.transaction_type:
         query = query.filter(Transaction.transaction_type == filter.transaction_type)
+    if filter.from_type:
+        query = query.filter(Transaction.from_type == filter.from_type)
     
     # Pagination
     transactions = query.order_by(desc(Transaction.created_at)).offset((filter.page - 1) * filter.limit).limit(filter.limit).all()
@@ -99,6 +101,8 @@ def readTransactionAdmin(db: Session, filter: TransactionFilter):
         query = query.filter(Transaction.created_at <= filter.to_date)
     if filter.transaction_type:
         query = query.filter(Transaction.transaction_type == filter.transaction_type)
+    if filter.from_type:
+        query = query.filter(Transaction.from_type == filter.from_type)
     
     # Pagination
     transactions = (
@@ -171,9 +175,12 @@ def getReferralwalletByUserId(id: int, db: Session):
     return wallet
 
 
-def createTransaction(transactionId: str, walletId: str, userId: int, amount: float, db: Session):
+def createTransaction(walletId: str, userId: int, amount: float, db: Session,transactionId: str=None,status:int =1):
+    """Create a transaction for Crypto wallet"""
     # Check if a transaction with the same transaction ID already exists
-    existingTransaction = db.query(Transaction).filter(Transaction.transaction_id == transactionId).first()
+    existingTransaction=None
+    if transactionId:
+        existingTransaction = db.query(Transaction).filter(Transaction.transaction_id == transactionId).first()
     
     if existingTransaction:
         print(f"Transaction with ID {transactionId} already exists. Skipping creation.")
@@ -187,12 +194,24 @@ def createTransaction(transactionId: str, walletId: str, userId: int, amount: fl
         transaction_type=0,  # Assuming 0 for credit
         ammount=round(amount, 2),
         created_at=datetime.now(timezone.utc),
-        status=1,  # Assuming 1 for completed
+        status=status,  # Assuming 1 for completed
         from_type=0  # Assuming 0 for crypto
     )
     db.add(newTransaction)
+    db.commit()
+    db.refresh(newTransaction)
     print(f"Transaction with ID {transactionId} created successfully.")
     return newTransaction
+
+def updateTransactionStatus(db:Session,transaction_id:str, ammount:float,status:int):
+    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    transaction.status = status
+    transaction.ammount = ammount
+    db.commit()
+    db.refresh(transaction)
+    return transaction
 
 
 def updateOrCreateCryptoWallet(userId: int, amount: float, db: Session):
@@ -376,7 +395,7 @@ def processApiResponse(data: dict):
 
                         print("updatation initiated")
                         # Create a new transaction entry
-                        if createTransaction(tx.get("hash"),wallet_id, user.id, inddigi_coin, db):
+                        if createTransaction(wallet_id, user.id, inddigi_coin, db,transactionId=tx.get("hash")):
 
                             #update transaction_id in user table
                             updateTransactionId(user.id,db,tx.get("hash"))
@@ -403,35 +422,29 @@ def processApiResponse(data: dict):
 
 
 
-def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id:str):
+def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id:str,transaction_id:str):
     with next(get_db()) as db:
-        if not createTransaction(txn_hsh,adimn_wallet_id,user_id,ammount,db):
+        try: 
+            user = updateTransactionId(user_id,db,txn_hsh)
+            # Update or create the user's interim wallet
+            adminWallet = updateOrCreateAdminWallet(adimn_wallet_id, ammount, db)
+            interimWallet = updateOrCreateInterimWallet(user_id, ammount, db)
+            updateTransactionStatus(db,transaction_id,ammount,1)
+            print("Transactions processed successfully.")
+        except Exception as e:
+            updateTransactionStatus(db,transaction_id,ammount,-1)
+            print(f"An error occurred: {str(e)}")
             db.rollback()
             db.close()
-            raise HTTPException(status_code=400, detail={"message": "Error creating transaction",
-                                                            "error": "Could not create transaction"})
-        else:
-            #update transaction_id in user table
-            try:
-                
-                user = updateTransactionId(user_id,db,txn_hsh)
-                # Update or create the user's interim wallet
-                adminWallet = updateOrCreateAdminWallet(adimn_wallet_id, ammount, db)
-                interimWallet = updateOrCreateInterimWallet(user_id, ammount, db)
-                print("Transactions processed successfully.")
-            except Exception as e:
-                print(f"An error occurred: {str(e)}")
-                db.rollback()
-                db.close()
-                raise HTTPException(status_code=400, detail={"message": "Error processing transaction",
+            raise HTTPException(status_code=400, detail={"message": "Error processing transaction",
                                                             "error": f"{str(e)}"})
-            # call_calculate_and_credit(user_id,ammount)
-            finally:
-                db.commit()
-                db.refresh(user)
-                db.refresh(adminWallet)
-                db.refresh(interimWallet)
-                db.close()
+        # call_calculate_and_credit(user_id,ammount)
+        finally:
+            db.commit()
+            db.refresh(user)
+            db.refresh(adminWallet)
+            db.refresh(interimWallet)
+            db.close()
 
 
 
