@@ -344,6 +344,8 @@ def InterimToCryptoWallet():
                         created_at=datetime.now(timezone.utc),
                         updated_at=datetime.now(timezone.utc)
                     )
+                    if not createTransaction(wallet.user_id, wallet.user_id, wallet.balance, db):
+                        raise Exception("Transaction not created")
                     cryptoWallet.balance += wallet.balance
                     db.add(cryptoWallet)
                     db.commit()
@@ -431,6 +433,10 @@ def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id
             interimWallet = updateOrCreateInterimWallet(user_id, ammount, db)
             updateTransactionStatus(db,transaction_id,ammount,1)
             print("Transactions processed successfully.")
+            print("Updating referral wallets of parent hierarchy...")
+            giveCommission = call_calculate_and_credit(user_id,ammount)
+            if not giveCommission["success"]:
+                raise Exception(f"Error processing referral hierarchy {str(giveCommission['error'])}")
         except Exception as e:
             updateTransactionStatus(db,transaction_id,ammount,-1)
             print(f"An error occurred: {str(e)}")

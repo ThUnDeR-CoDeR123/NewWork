@@ -422,7 +422,7 @@ def createTransaction( userId: int, user_id:str, amount: float, db: Session):
     user = getUserById(userId,db)
     # Create a new transaction if no duplicate is found
     newTransaction = Transaction(
-        wallet_id=user.wallet_id,
+        wallet_id=user.referral_wallet.id,
         user_id=userId,
         transaction_type=0,  # Assuming 0 for credit
         ammount=round(amount, 2),

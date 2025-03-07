@@ -256,13 +256,16 @@ async def calculate_and_credit_parent_hierarchy(
         )
 
     except OperationalError as e:
+        print("database error")
         return JSONResponse(
             content={"error": f"Database error: {str(e)}"},
             status_code=500
         )
     except Exception as e:
+
         # Capture the full traceback details
         error_details = traceback.format_exc()
+        print(error_details)
         return JSONResponse(
             content={
                 "error": str(e),
