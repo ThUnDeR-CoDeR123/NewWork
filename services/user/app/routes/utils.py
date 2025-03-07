@@ -264,12 +264,11 @@ async def create_user(user: UserCreate,user_id: Annotated[int, Depends(createUse
                         htmlbody=f"<p>Thanks for registering.</p><br> Click Here To Verify your account  <a href='http%22'>Click Here!</a>"
                         )
         print("mail sent successfully")
-        r
         # await generate_referral_code(user_id)
         if not user.referral_code:
             return JSONResponse(status_code=200, content={"message": "Account Created! An email has been sent. No Referral Code Provided",
                                                           "token": response.json().get("access_token")})
-        print("generating referral code...")
+        print("...............................................generating referral code..............................................................................")
         assign_referral = await generate_referral(user_id,user.referral_code)
         print("Received Referral Code.")
         if assign_referral.status_code != 200:
@@ -280,7 +279,8 @@ async def create_user(user: UserCreate,user_id: Annotated[int, Depends(createUse
                                                           "token": response.json().get("access_token")})
     except Exception as e:
         return JSONResponse(status_code=200,  content={"message": "Could not send email! Please reverify",
-                                                          "token": response.json().get("access_token")})
+                                                          "token": response.json().get("access_token"),
+                                                          "error": str(e)})
 
 
 

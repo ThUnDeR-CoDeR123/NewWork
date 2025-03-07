@@ -21,7 +21,7 @@ def startSchedulerInBackground():
     schedulerThread = threading.Thread(target=runScheduler, daemon=True)       # Create the thread
     schedulerThread.start()   
     schedule.every(2).minutes.do(updateWallet)    # Schedule the task
-    schedule.every(2).minutes.do(updateReferralWallet) 
+    # schedule.every(2).minutes.do(updateReferralWallet) 
 def runScheduler():
     while True:
         print("Scheduler running...")
