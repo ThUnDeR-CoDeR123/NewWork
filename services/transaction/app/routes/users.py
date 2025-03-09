@@ -43,7 +43,7 @@ def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depen
     return readTransaction(db,filter)
 
 
-@user_router.get("/transactions/crypto-deposit")
+@user_router.post("/transactions/crypto-deposit")
 def crypto_deposit(data: transactionRequest , db : Annotated[Session , Depends(get_db) ]):
     token = data.token_data
     if token == None:

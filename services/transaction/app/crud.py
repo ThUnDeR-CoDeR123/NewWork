@@ -203,12 +203,13 @@ def createTransaction(walletId: str, userId: int, amount: float, db: Session,tra
     print(f"Transaction with ID {transactionId} created successfully.")
     return newTransaction
 
-def updateTransactionStatus(db:Session,transaction_id:str, ammount:float,status:int):
+def updateTransactionStatus(db:Session,transaction_id:str, ammount:float=None,status:int=0):
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
     transaction.status = status
-    transaction.ammount = ammount
+    if ammount:
+        transaction.ammount = ammount
     db.commit()
     db.refresh(transaction)
     return transaction

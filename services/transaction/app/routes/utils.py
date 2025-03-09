@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.models import Transaction, ReferralWallet, User
 from app.database import get_db  # Assuming you have a DB session dependency
 from pydantic import BaseModel
-from app.crud import processTransaction,resetAdminWallet
+from app.crud import processTransaction,resetAdminWallet,updateTransactionStatus
 import httpx
 from app.schemas import TokenData
 from fastapi.security import OAuth2PasswordBearer
@@ -128,6 +128,7 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event,trans
                 print("Transaction not found within timeout...")
                 print("resetting admin wallet...")
                 resetAdminWallet(db,admin_wallet_id)
+                updateTransactionStatus(db,transaction_id,status=-1)
 
                 db.commit()
                 db.close()
