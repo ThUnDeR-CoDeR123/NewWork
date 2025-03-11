@@ -15,9 +15,9 @@ class Base(DeclarativeBase):
     def to_dict(self, seen=None):
         if seen is None:
             seen = set()
-        if self in seen:
+        if id(self) in seen:
             return {}  # Prevent infinite loop by returning an empty dict for already seen objects.
-        seen.add(self)
+        seen.add(id(self))
         data = {column.name: (
             getattr(self, column.name).isoformat() if isinstance(getattr(self, column.name), datetime) else getattr(self, column.name)
         ) for column in self.__table__.columns}
@@ -47,13 +47,27 @@ class Entitlement(Base):
     __tablename__ = "entitlement"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     label: Mapped[str] = mapped_column(String(30))
+    cost: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'))
     del_flag: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
- 
+
+    user_entitlements: Mapped[List["UserEntitlement"]] = relationship("UserEntitlement", back_populates="entitlement")
     def __repr__(self) -> str:
         return f"Entitlement(id={self.id!r}, label={self.label!r})"
 
+# Many-to-Many Association Table (Junction Table)
+class UserEntitlement(Base):
+    __tablename__ = "user_entitlement"
+    
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), primary_key=True)
+    entitlement_id: Mapped[int] = mapped_column(Integer, ForeignKey("entitlement.id"), primary_key=True)
+
+    
+    user: Mapped["User"] = relationship("User", back_populates="user_entitlements")
+    entitlement: Mapped["Entitlement"] = relationship("Entitlement", back_populates="user_entitlements")
+
+    def __repr__(self) -> str:
+        return f"UserEntitlement(user_id={self.user_id!r}, entitlement_id={self.entitlement_id!r})"
 
 
 class User(Base):
@@ -76,7 +90,7 @@ class User(Base):
 
     #Relationships
     interim_wallet = relationship("InterimWallet", back_populates="user", uselist=False, cascade="all, delete")
-    entitlements: Mapped[List[Entitlement]] = relationship("Entitlement", backref="user", lazy='select')
+    user_entitlements: Mapped[List["UserEntitlement"]] = relationship("UserEntitlement", back_populates="user")
     crypto_wallet: Mapped["CryptoWallet"] = relationship("CryptoWallet", back_populates="user", uselist=False, cascade="all, delete")
     referral_wallet: Mapped["ReferralWallet"] = relationship("ReferralWallet", back_populates="user", uselist=False, cascade="all, delete")
     referred_users: Mapped[List["Referral"]] = relationship(
@@ -91,6 +105,9 @@ class User(Base):
         foreign_keys="Referral.referrer_id" ,
         cascade="all, delete"
     )
+    @property
+    def entitlements(self):
+        return [{"cost":ue.entitlement.cost,"label":ue.entitlement.label} for ue in self.user_entitlements]
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, email={self.email!r})"

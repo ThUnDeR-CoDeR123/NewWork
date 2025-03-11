@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 
 from app.schemas import  User,Token,LoginRequest,UserCreate,TokenData,Token,conversationData
-from app.crud.user import createUser,authenticate_user,updateLastLogin,updateVerified,getUserById,get_level_counts
+from app.crud.user import createUser,authenticate_user,updateLastLogin,updateVerified,getUserById,get_level_counts,getUserEntitlements
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from app.config import settings
@@ -69,7 +69,6 @@ def modelToSchema(user : app.models.User,hierarchy_count:int = None,db:Session =
         last_login=(user.last_login + timedelta(hours=5, minutes=30)) if user.last_login else None,
         created_at=user.created_at + timedelta(hours=5, minutes=30),
         updated_at=(user.updated_at + timedelta(hours=5, minutes=30)) if user.updated_at else None,
-        entitlements=user.entitlements,
         referral_code=user.referral_code,
         Crypto_balance=user.crypto_wallet.balance,
         Referral_balance=user.referral_wallet.balance,
@@ -82,7 +81,11 @@ def modelToSchema(user : app.models.User,hierarchy_count:int = None,db:Session =
         if levelCount:
             UserSchema.level_count = [{"level": level, "count": count} for level, count in levelCount]
             
-            
+    
+    # plans = getUserEntitlements(user.id,db)
+    plans = user.entitlements
+    if plans:
+        UserSchema.plans = plans
     if hierarchy_count:
         UserSchema.hierarchy_count = hierarchy_count
     return UserSchema
@@ -216,7 +219,7 @@ async def conversation(data : conversationData):
     <div>
         <p>We value your time and thank you for choosing us.</p>
         <p>Warm regards,</p>
-        <p><strong>Inddigi Team</strong></p>
+        <p><strong>Backend Team</strong></p>
     </div>
 </div>
 """
@@ -228,7 +231,7 @@ async def conversation(data : conversationData):
     marker =0
     try:
 
-        await send_mail("customer.support@inddigi.com", "USER query", email_body_support,"business@inddigi.com")
+        await send_mail("#", "USER query", email_body_support,"#")
         marker+=1
         await send_mail(data.email,f"Thank You for Reaching Out, {data.name}!", htmlbody = email_body_user)
 

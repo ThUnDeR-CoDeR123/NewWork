@@ -30,7 +30,7 @@ def create_referral(request: ReferralAddRequest, db: Annotated[Session,Depends(g
         .first()
     )
     if existing_referral:
-        raise ValueError(f"Referral already exists between referrer ID {referrer.id} and referred user ID {request.referred_user_id}")
+        raise HTTPException(status_code=503,detail=f"Referral already exists between referrer ID {referrer.id} and referred user ID {request.referred_user_id}")
     
 
     

@@ -90,14 +90,6 @@ def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depen
         return JSONResponse(status_code=403, content={"message": "Admin access required"})
     return readTransactionAdmin(db,filter)
 
-@admin_router.post("/admin/view/usertransactions")
-def view_transactions(filter: TransactionFilter , db : Annotated[Session , Depends(get_db) ]):
-    if filter.token_data is None:
-        return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
-    if filter.token_data.is_admin is False:
-        return JSONResponse(status_code=403, content={"message": "Admin access required"})
-    return readTransaction(db,filter)
-
 
 @admin_router.post("/admin/referral/setlimit")
 async def set_min_balance(min_balance: setMinBalance):

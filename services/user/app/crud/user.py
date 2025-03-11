@@ -1,5 +1,5 @@
 from app.schemas import UserCreate, UserUpdate,OTP,OTPdetails,forgetEmail,VerifyEmail,UserFilter
-from app.models import User,CryptoWallet,ReferralWallet,ReferralCount,InterimWallet
+from app.models import User,CryptoWallet,ReferralWallet,ReferralCount,InterimWallet,Entitlement,UserEntitlement
 from app.database import get_db
 from fastapi import Depends,HTTPException
 from sqlalchemy.orm import Session
@@ -230,6 +230,14 @@ def getUserByEmail(email: str, db: Session ):
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found or has been marked as deleted")
     return db_user
+
+def getUserEntitlements(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    query = text("""select cost,label from entitlement where id in (select entitlement_id from user_entitlement where user_id =:user_id);""")
+
+    result = db.execute(query, {"user_id": user_id})
+    rows = result.fetchall()
+    return [{"cost": row[0], "label":row[1]} for row in rows]
 
 #Update
 def updateUser(user_id : int,user: UserUpdate, db: Session = Depends(get_db)):
