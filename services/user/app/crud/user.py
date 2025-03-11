@@ -206,10 +206,12 @@ def getAllUsers(db: Session = Depends(get_db), fil : UserFilter=None):
             User.referral_code,
             User.transaction_id,
             CryptoWallet.balance.label("Crypto_balance"),
-            ReferralWallet.balance.label("Referral_balance")
+            ReferralWallet.balance.label("Referral_balance"),
+            InterimWallet.balance.label("Interim_balance")
         )
         .join(CryptoWallet, User.id == CryptoWallet.user_id, isouter=True)
         .join(ReferralWallet, User.id == ReferralWallet.user_id, isouter=True)
+        .join(InterimWallet, User.id == InterimWallet.user_id, isouter=True)
         .filter(User.del_flag == False)
     )
     if fil and fil.email is not None :

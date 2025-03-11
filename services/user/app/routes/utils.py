@@ -316,10 +316,10 @@ async def adminLogin(
     user =  authenticate_user(form_data.email, form_data.password, db=db)
 
     if not user :
-        return JSONResponse(status_code=401,content="Invalid Credentials!")
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
 
     if not user.is_admin:
-        return JSONResponse(status_code=401,content="Admin not found!")
+        return JSONResponse(status_code=401,content={"message":"Admin not found!"})
     
     try:
         response = await generateToken(id=user.id, username=form_data.email,flag="LOGIN",is_admin=user.is_admin)
@@ -330,11 +330,11 @@ async def adminLogin(
             if response.status_code == 401:
                 return JSONResponse(
                     status_code=401,
-                    content={"error": "Unauthorized: The provided credentials are incorrect or expired."}
+                    content={"message": "Unauthorized: The provided credentials are incorrect or expired."}
                 )
             return JSONResponse(
                 status_code=response.status_code,
-                content={"error": "Unexpected status code returned from auth service."}
+                content={"message": "Unexpected status code returned from auth service."}
             )
         updateLastLogin(user,db)
 
@@ -344,7 +344,8 @@ async def adminLogin(
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": f"An unexpected error occurred: {str(e)}"}
+            content={"error": f"An unexpected error occurred: {str(e)}",
+                     "message": "An unexpected error occurred. Please try again!"}
         )
 
 
