@@ -85,7 +85,8 @@ def check_for_transaction(user_id, start_time, admin_wallet_id, stop_event,trans
         while not stop_event.is_set():
             try:
                 url1 = "https://api.bscscan.com/api?module=account&action=tokentx&address="
-                url2 = "&page=1&offset=20&sort=desc&apikey=YMVC34Z4H1XYUGX7T8CAC57R77WMMMIPH6"
+                url2 = f"&page=1&offset=20&sort=desc&apikey={settings.apikey}"
+                print(url2)
                 response = requests.get(str(url1+admin_wallet_id+url2))
                 # response = requests.get("http://192.168.0.101:8010/transactions")
                 response.raise_for_status()

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     referral_service_url : str
     database_url : str
     apiurl : str
-    
+    apikey : str
 
 
 
