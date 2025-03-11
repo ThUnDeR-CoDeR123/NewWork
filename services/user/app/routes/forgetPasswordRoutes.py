@@ -47,13 +47,13 @@ async def forget_password(req: forgetEmail, background_tasks: BackgroundTasks, d
         await send_mail(
                 req.email,
                 subject="Here is your Forget password link!",
-                htmlbody=f"<p>if this is not triggered by you then Ignore the email </p><br> click the button to reset your password : <a href='https://inddigi.com/#/confirmpass?token=%22{response.json().get('access_token')}%22'>Click Here!</a>"
+                htmlbody=f"<p>if this is not triggered by you then Ignore the email </p><br> click the button to reset your password : <a href='#?token=%22{response.json().get('access_token')}%22'>Click Here!</a>"
             )
         return JSONResponse(
                 status_code=200, 
                 content={
                     "message": "Email sent successfully!",
-                    "link": f"https://inddigi.com/#/confirmpass?token=%22{response.json().get('access_token')}%22",
+                    "link": f"#/confirmpass?token=%22{response.json().get('access_token')}%22",
                     "token": f"{response.json().get('access_token')}"
                 }
             )
@@ -61,7 +61,7 @@ async def forget_password(req: forgetEmail, background_tasks: BackgroundTasks, d
         return JSONResponse(status_code=502, content={
             "message": "Could not send email ",
             "details": f"{str(e)}",
-            "link": f"https://inddigi-dev.web.app/#/confirmpass?token=%22{response.json().get('access_token')}%22",
+            "link": f"#?token=%22{response.json().get('access_token')}%22",
             "token": f"{response.json().get('access_token')}"
             })
                 
@@ -70,8 +70,6 @@ async def forget_password(req: forgetEmail, background_tasks: BackgroundTasks, d
 @forgetRouter.post("/reset-password")
 async def reset_password(data: passwordReset, db: Annotated[Session, Depends(get_db)]):
     try:
-
-
 
         token_data = await getTokenDataFromAuthService(data.token)
 

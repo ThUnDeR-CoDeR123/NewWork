@@ -50,6 +50,12 @@ def crypto_deposit(data: transactionRequest , db : Annotated[Session , Depends(g
         return JSONResponse(status_code=401, content={"message": "Unauthorized access"}) 
     user_id = token.id
     print("Setting an admin wallet...")
+    #chek for previous pending transactions
+    pending = readTransaction(db,TransactionFilter(user_id=user_id,status=0,transaction_type=0,from_type=0))
+    if len(pending) > 0:
+        return JSONResponse(status_code=400, content={"error": "Transaction already in progress",
+                                                      "message": "Please wait for the previous transaction to complete",
+                                                      "details": "Transaction already in progress"})
     try:
         admin_wallet = getAdminWallet(db)  # Get admin wallet address
     except Exception as e:

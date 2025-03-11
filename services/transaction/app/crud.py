@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import ReferralWallet, Transaction, User,CryptoWallet,AdminWallet,InterimWallet
+from app.models import ReferralWallet, Transaction, User,CryptoWallet,AdminWallet,InterimWallet,Entitlement,UserEntitlement
 from app.schemas import TransactionFilter
 from fastapi import HTTPException
 from app.database import get_db
@@ -367,64 +367,6 @@ def InterimToCryptoWallet():
 
 
 
-
-
-def processApiResponse(data: dict):
-    print("ProcessingApiResponse")
-    with next(get_db()) as db:
-        try:
-            if data.get("status") and "result" in data:
-                print("data recived successfully")
-                transactions = data["result"]
-                for tx in transactions:
-                    print("processing transaction")
-                    wallet_id = tx.get("from")
-                    amount = float(tx.get("value")) / (10 ** int(tx["tokenDecimal"])) 
-                    inddigi_coin = amount * (21.0/25.0)
-
-
-                    user = findUserByWalletId(wallet_id, db)
-                    if not user:
-                        print("user not found", wallet_id)
-                    else:
-                        print("user found")
-                    if user:
-                        print(user.transaction_id,tx.get("hash"))
-                    if (user and ( not user.transaction_id or user.transaction_id != tx.get("hash") )) :
-                        if amount< 25 :
-                            print(amount, inddigi_coin, "insufficient amount, skipping transaction...")
-                            continue
-            
-
-                        print("updatation initiated")
-                        # Create a new transaction entry
-                        if createTransaction(wallet_id, user.id, inddigi_coin, db,transactionId=tx.get("hash")):
-
-                            #update transaction_id in user table
-                            updateTransactionId(user.id,db,tx.get("hash"))
-                            # Update or create the user's crypto wallet
-                            updateOrCreateCryptoWallet(user.id, inddigi_coin, db)
-                            print("Transactions processed successfully.")
-
-                            #update the referral heirarchy and credit the reward
-                            call_calculate_and_credit(user.id,amount)
-                db.commit()
-            else:
-                print("API call returned no data or success flag is False.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            db.rollback()
-
-
-
-
-
-
-
-
-
-
-
 def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id:str,transaction_id:str):
     with next(get_db()) as db:
         try: 
@@ -438,11 +380,24 @@ def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id
             giveCommission = call_calculate_and_credit(user_id,ammount)
             if not giveCommission["success"]:
                 raise Exception(f"Error processing referral hierarchy {str(giveCommission['error'])}")
+            #update the entitlement
+            entitlement = db.query(Entitlement).filter(Entitlement.cost <= ammount).order_by(desc(Entitlement.cost)).first()
+            if entitlement:
+                userEntitlement = UserEntitlement(
+                    user_id = user_id,
+                    entitlement_id = entitlement.id
+                )
+                db.add(userEntitlement)
+                
+                print("Entitlement updated successfully")
+            else:
+                print("No matching entitlement found for the given amount.")
+
         except Exception as e:
             updateTransactionStatus(db,transaction_id,ammount,-1)
             print(f"An error occurred: {str(e)}")
             db.rollback()
-            db.close()
+            
             raise HTTPException(status_code=400, detail={"message": "Error processing transaction",
                                                             "error": f"{str(e)}"})
         # call_calculate_and_credit(user_id,ammount)
@@ -450,18 +405,10 @@ def processTransaction(txn_hsh: str, user_id:int, ammount: float,adimn_wallet_id
             db.commit()
             db.refresh(user)
             db.refresh(adminWallet)
+            if userEntitlement:
+                db.refresh(userEntitlement)
             db.refresh(interimWallet)
             db.close()
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -507,13 +454,6 @@ def call_calculate_and_credit(user_id: int, base_amount: float) -> dict:
             "error": str(e)
         }
     
-
-
-
-
-
-
-
 
 
 def updateTransactionId(user_id : int, db : Session, transaction_id : str):

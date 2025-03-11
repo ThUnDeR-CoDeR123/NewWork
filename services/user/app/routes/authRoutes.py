@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.schemas import  UserUpdate, User,DeleteUser,updateWalletId,TokenData,UserFilter
 from app.database import get_db
-from app.crud.user import updateUser,getUserById,truncateUsersTable,deleteUser,getAllUsers,deleteAllTable,truncateUserTable,updateUserWalletid,get_level_counts,generatetreeChild
+from app.crud.user import updateUser,getUserById,truncateUsersTable,deleteUser,getAllUsers,deleteAllTable,truncateUserTable,updateUserWalletid,get_level_counts,generatetreeChild,getUserEntitlements
 from typing import Annotated,List
 from app.routes.utils import oauth2_scheme,getTokenDataFromAuthService,modelToSchema
 from starlette.responses import JSONResponse
@@ -39,7 +39,16 @@ async def read_user(token_data: TokenData | None,db: Annotated[Session, Depends(
     return user1
 
     
-
+@tokenRouter.get("/plans/{user_id}")
+async def get_user_plans(user_id:int| None,token_data: TokenData | None,db: Annotated[Session, Depends(get_db)]):
+    if token_data is None :
+        return JSONResponse(status_code=401,content={"message": "missing Authorization header"})
+    if token_data.flag != "LOGIN":
+        return JSONResponse(status_code=401,content={"message": "Invalid Credentials!"})
+    if not token_data.is_admin:
+        return JSONResponse(status_code=401,content={"message": "Permission Denied!"})
+    plans = getUserEntitlements(user_id,db)
+    return plans
 
 #get all user
 @tokenRouter.post("/all", response_model=List[User])
