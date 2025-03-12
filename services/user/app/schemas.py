@@ -64,6 +64,24 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+class UserSchema(UserBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    entitlements: Optional[List[Entitlement]] = Field(default_factory=list)
+    wallet_id: Optional[str] = None
+    is_verified: Optional[bool] = False
+    referral_code: Optional[str] = None
+    Interim_balance: Optional[float] = 0.0
+    Crypto_balance: Optional[float] = 0.0
+    Referral_balance: Optional[float] = 0.0
+    transaction_id: Optional[str] = None
+    hierarchy_count: Optional[int] = None
+    level_count : Optional[List[dict]] = Field(default_factory=list)
+    plans: Optional[List[dict]] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
 
     
 class UserUpdate(UserBase):

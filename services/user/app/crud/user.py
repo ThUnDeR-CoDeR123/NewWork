@@ -1,4 +1,4 @@
-from app.schemas import UserCreate, UserUpdate,OTP,OTPdetails,forgetEmail,VerifyEmail,UserFilter
+from app.schemas import UserCreate, UserUpdate,OTP,OTPdetails,forgetEmail,VerifyEmail,UserFilter,UserSchema
 from app.models import User,CryptoWallet,ReferralWallet,ReferralCount,InterimWallet,Entitlement,UserEntitlement
 from app.database import get_db
 from fastapi import Depends,HTTPException
@@ -11,7 +11,7 @@ from ..models import Base
 from datetime import timedelta,datetime,timezone
 from sqlalchemy import MetaData , text 
 import hashlib
-
+from sqlalchemy.orm import joinedload
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -190,43 +190,51 @@ def getUserById(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found or has been marked as deleted")
     return db_user
 
-
-def getAllUsers(db: Session = Depends(get_db), fil : UserFilter=None):
-    
+def getAllUsers(db: Session = Depends(get_db), fil: UserFilter = None):
     query = (
-        db.query(
-            User.id,
-            User.email,
-            User.full_name,
-            User.last_login,
-            User.created_at,
-            User.updated_at,
-            User.wallet_id,
-            User.is_verified,
-            User.referral_code,
-            User.transaction_id,
-            CryptoWallet.balance.label("Crypto_balance"),
-            ReferralWallet.balance.label("Referral_balance"),
-            InterimWallet.balance.label("Interim_balance")
+        db.query(User)
+        .options(
+            joinedload(User.user_entitlements).joinedload(UserEntitlement.entitlement),
+            joinedload(User.crypto_wallet),
+            joinedload(User.referral_wallet),
+            joinedload(User.interim_wallet),
         )
-        .join(CryptoWallet, User.id == CryptoWallet.user_id, isouter=True)
-        .join(ReferralWallet, User.id == ReferralWallet.user_id, isouter=True)
-        .join(InterimWallet, User.id == InterimWallet.user_id, isouter=True)
         .filter(User.del_flag == False)
     )
-    if fil and fil.email is not None :
+
+    if fil and fil.email is not None:
         print("Filtering users with", fil.email)
         query = query.filter(User.email.like(f"%{fil.email}%"))
-    if fil and  fil.page is not None and fil.limit is not None:
+
+    if fil and fil.page is not None and fil.limit is not None:
         offset = (fil.page - 1) * fil.limit
         query = query.offset(offset).limit(fil.limit)
 
-    
     users = query.all()
-    
-    
-    return users
 
+    # Transform to Pydantic Model Schema
+    user_list = [
+        UserSchema(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            last_login=user.last_login,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            wallet_id=user.wallet_id,
+            is_verified=user.is_verified,
+            referral_code=user.referral_code,
+            transaction_id=user.transaction_id,
+            Interim_balance=user.interim_wallet.balance if user.interim_wallet else 0.0,
+            Crypto_balance=user.crypto_wallet.balance if user.crypto_wallet else 0.0,
+            Referral_balance=user.referral_wallet.balance if user.referral_wallet else 0.0,
+            
+            plans=user.entitlements  # Plans derived from entitlements
+        )
+        for user in users
+    ]
+
+    return user_list
 def getUserByEmail(email: str, db: Session ):
     db_user = db.query(User).filter(User.email == email, User.del_flag == False).first()
     if db_user is None:
