@@ -197,17 +197,17 @@ def reward_users_based_on_milestones(db: Session):
 def calculate_credit_amount(level: int, base_amount: float) -> float:
     reward_percentages = {
         1: 10.00,
-        2: 5.00,
-        3: 3.00,
-        4: 2.00,
-        5: 1.00,
-        6: 0.50,
-        7: 0.50,
-        8: 0.50,
-        9: 0.25,
-        10: 0.25,
-        11: 0.25,
-        12: 0.25,
+        2: 7.00,
+        3: 5.00,
+        4: 4.00,
+        5: 3.0,
+        6: 2.0,
+        7: 1.0,
+        8: 1.0,
+        9: 0.5,
+        10: 0,
+        11: 0,
+        12: 0,
     }
     percentage = reward_percentages.get(level, 0)
     return (base_amount * percentage) / 100
@@ -215,7 +215,7 @@ def calculate_credit_amount(level: int, base_amount: float) -> float:
 
 
 
-def generatetreeParent(db_session: Session, root_user_id: int, max_depth: int = 12):
+def generatetreeParent(db_session: Session, root_user_id: int, max_depth: int = 9):
     """
     Generate a referral tree starting from a specific user, traversing up the hierarchy.
 
@@ -262,7 +262,7 @@ def generatetreeParent(db_session: Session, root_user_id: int, max_depth: int = 
     return tree
 
 
-def generate_tree_with_user_details(db_session: Session, root_user_id: int, max_depth: int = 12):
+def generate_tree_with_user_details(db_session: Session, root_user_id: int, max_depth: int = 9):
     query = text("""
         WITH RECURSIVE referral_tree AS (
             SELECT 
@@ -323,7 +323,7 @@ def generate_tree_with_user_details(db_session: Session, root_user_id: int, max_
             for row in rows
         ]
 
-def generatetreeChild(db_session: Session, root_user_id: int, max_depth: int = 12):
+def generatetreeChild(db_session: Session, root_user_id: int, max_depth: int = 9):
     query = text("""
             WITH RECURSIVE referral_tree AS (
                 SELECT 

@@ -105,7 +105,7 @@ async def get_referrers(user_id: int , db : Annotated[Session, Depends(get_db)],
   
 
 @router.get("/hierarchy-count/{user_id}")
-async def get_hierarchy_count(db: Annotated[Session , Depends(get_db)],user_id: int, max_depth: Optional[int] = 12):
+async def get_hierarchy_count(db: Annotated[Session , Depends(get_db)],user_id: int, max_depth: Optional[int] = 9):
     """
     Retrieves the total number of referred users within a hierarchy for a specified user.
     """
