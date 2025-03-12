@@ -21,7 +21,11 @@ def request_withdrawal(withdrawal: transactionRequest, db : Annotated[Session , 
         return JSONResponse(status_code=401, content={"message": "Unauthorized access"})
     token = withdrawal.token_data
     try:
-
+        pending  = readTransaction(db,TransactionFilter(user_id=token.id,status=0,transaction_type=1,from_type=1))
+        if len(pending) > 0:
+            return JSONResponse(status_code=400, content={"error": "Transaction already in progress",
+                                                          "message": "Please wait for the previous transaction to complete",
+                                                          "details": "Transaction already in progress"})
         minBalance = read_min_balance()
         
         t= addWithdrawal(token.id, withdrawal.amount, db,minbalance=minBalance)

@@ -54,7 +54,7 @@ class User(UserBase):
     wallet_id: Optional[str] = None
     is_verified: Optional[bool] = False
     referral_code: Optional[str] = None
-    interim_balance: Optional[float] = 0.0
+    Interim_balance: Optional[float] = 0.0
     Crypto_balance: Optional[float] = 0.0
     Referral_balance: Optional[float] = 0.0
     transaction_id: Optional[str] = None

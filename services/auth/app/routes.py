@@ -52,49 +52,49 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: An
     except jwt.ExpiredSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your Forgetpassword/Login token is expired. Kindly relogin or make another forget password request."}
+            content={"message": "Your Forgetpassword/Login token is expired. Kindly relogin or make another forget password request."}
         )
 
     except jwt.InvalidSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your AccessToken is invalid. Kindly relogin or try again."}
+            content={"message": "Your AccessToken is invalid. Kindly relogin or try again."}
         )
 
     except jwt.DecodeError:
         return JSONResponse(
             status_code=500,
-            content={"error": "Error decoding token."}
+            content={"message": "Error decoding token."}
         )
 
     except jwt.InvalidIssuerError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your AccessToken is invalid."}
+            content={"message": "Your AccessToken is invalid."}
         )
 
     except jwt.InvalidAudienceError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Invalid token audience."}
+            content={"message": "Invalid token audience."}
         )
 
     except jwt.ImmatureSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Token is not yet valid."}
+            content={"message": "Token is not yet valid."}
         )
 
     except jwt.MissingRequiredClaimError:
         return JSONResponse(
             status_code=400,
-            content={"error": "Token is missing a required claim."}
+            content={"message": "Token is missing a required claim."}
         )
 
     except jwt.InvalidTokenError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Could not validate user credentials."}
+            content={"message": "Could not validate user credentials."}
         )
 
     

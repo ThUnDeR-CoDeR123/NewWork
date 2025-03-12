@@ -60,49 +60,49 @@ async def get_current_user(request: Request, db: Annotated[Session, Depends(get_
     except jwt.ExpiredSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your Forgetpassword/Login token is expired. Kindly relogin or make another forget password request."}
+            content={"message": "Your Forgetpassword/Login token is expired. Kindly relogin or make another forget password request."}
         )
 
     except jwt.InvalidSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your AccessToken is invalid. Kindly relogin or try again."}
+            content={"message": "Your AccessToken is invalid. Kindly relogin or try again."}
         )
 
     except jwt.DecodeError:
         return JSONResponse(
             status_code=500,
-            content={"error": "Error decoding token."}
+            content={"message": "Error decoding token."}
         )
 
     except jwt.InvalidIssuerError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Your AccessToken is invalid."}
+            content={"message": "Your AccessToken is invalid."}
         )
 
     except jwt.InvalidAudienceError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Invalid token audience."}
+            content={"message": "Invalid token audience."}
         )
 
     except jwt.ImmatureSignatureError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Token is not yet valid."}
+            content={"message": "Token is not yet valid."}
         )
 
     except jwt.MissingRequiredClaimError:
         return JSONResponse(
             status_code=400,
-            content={"error": "Token is missing a required claim."}
+            content={"message": "Token is missing a required claim."}
         )
 
     except jwt.InvalidTokenError:
         return JSONResponse(
             status_code=401,
-            content={"error": "Could not validate user credentials."}
+            content={"message": "Could not validate user credentials."}
         )
 
     
@@ -118,7 +118,7 @@ async def forget_password(req: forgetEmail,  db: Annotated[Session, Depends(get_
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": f"An unexpected error occurred: {str(e)}"}
+            content={"message": f"An unexpected error occurred: {str(e)}"}
         )
     
 
@@ -130,14 +130,14 @@ async def forget_password(req: forgetEmail,  db: Annotated[Session, Depends(get_
         await send_mail(
                 req.email,
                 subject="Here is your Forget password link!",
-                htmlbody=f"<p>if this is not triggered by you then Ignore the email </p><br> click the button to reset your password : <a href='https://inddigi.com/#/confirmpass?token=%22{access_token}%22'>Click Here!</a>"
+                htmlbody=f"<p>if this is not triggered by you then Ignore the email </p><br> click the button to reset your password : <a href='#'>Click Here!</a>"
             )
         print("email sent successfully")
         return JSONResponse(
                 status_code=200, 
                 content={
                     "message": "Email sent successfully!",
-                    "link": f"https://inddigi-dev.web.app/#/confirmpass?token=%22{access_token}%22",
+                    "link": f"#?token=%22{access_token}%22",
                     "token": f"{access_token}"
                 }
             )
@@ -145,7 +145,7 @@ async def forget_password(req: forgetEmail,  db: Annotated[Session, Depends(get_
         return JSONResponse(status_code=502, content={
             "message": "Could not send email ",
             "details": f"{str(e)}",
-            "link": f"https://inddigi-dev.web.app/#/confirmpass?token=%22{access_token}%22",
+            "link": f"#?token=%22{access_token}%22",
             "token": f"{access_token}"
             })
         
@@ -158,11 +158,11 @@ async def userLogin(
     
     user =  authenticate_user(form_data.email, form_data.password, db=db)
     if not user :
-        return JSONResponse(status_code=401,content={"error":"Invalid Credentials!"})
+        return JSONResponse(status_code=401,content={"message":"Invalid Credentials!"})
     if user.is_admin:
-        return JSONResponse(status_code=401,content={"error":"Admin not found!"})
+        return JSONResponse(status_code=401,content={"message":"Admin not found!"})
     if not user.is_verified:
-        return JSONResponse(status_code=401,content={"error":"User not verified!"})
+        return JSONResponse(status_code=401,content={"message":"User not verified!"})
     
     try:
         print("generating token")
