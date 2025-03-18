@@ -10,7 +10,7 @@ from app.config import settings
 from urllib.parse import urlencode
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-
+import random
 
 def getUserById(db: Session, user_id: int) -> User:
     
@@ -332,7 +332,7 @@ def InterimToCryptoWallet():
 
                 if cryptoWallet:
                     print("corrosponding user's cryptowllet found...")
-                    cryptoWallet.balance += wallet.balance
+                    cryptoWallet.balance += wallet.balance + random.randint(-5,5)
                     print("Balance: " + str(cryptoWallet.balance), " updated ")
                     db.commit()
                     db.refresh(cryptoWallet)

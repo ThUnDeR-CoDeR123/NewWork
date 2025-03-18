@@ -205,9 +205,9 @@ def calculate_credit_amount(level: int, base_amount: float) -> float:
         7: 1.0,
         8: 1.0,
         9: 0.5,
-        10: 0,
-        11: 0,
-        12: 0,
+        10: -1,
+        11: -1,
+        12: -1,
     }
     percentage = reward_percentages.get(level, 0)
     return (base_amount * percentage) / 100
